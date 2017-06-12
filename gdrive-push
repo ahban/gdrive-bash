@@ -70,7 +70,3 @@ echo evening $(date +"%Y/%m/%d-%H:%M") >> ${SELF_ROOT}/log.txt
 gdrive sync upload --keep-local $LOCAL_NAME $REMOTE_IDS
 echo '# ' end to log ...
 echo '###########################################################'
-#
-#
-#
-#
