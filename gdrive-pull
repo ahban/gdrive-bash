@@ -1,0 +1,22 @@
+#!/bin/bash
+SELF_ROOT=.gdrive
+REMOTE_IDS=`cat ${SELF_ROOT}/configure | sed -n '1p'`
+LOCAL_NAME=.
+
+echo $REMOTE_IDS
+echo $LOCAL_NAME
+
+gdrive sync download --keep-remote $REMOTE_IDS $LOCAL_NAME
+
+
+
+echo '###########################################################'
+echo '# ' begin to log ...
+echo moring $(date +"%Y/%m/%d-%H:%M") >> ${SELF_ROOT}/log.txt
+gdrive sync upload --keep-local $LOCAL_NAME $REMOTE_IDS
+echo '# ' end to log ...
+echo '###########################################################'
+
+
+
+

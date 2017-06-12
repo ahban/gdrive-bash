@@ -1,0 +1,76 @@
+#!/bin/bash
+
+SELF_ROOT=.gdrive
+REMOTE_IDS=`cat ${SELF_ROOT}/configure | sed -n '1p'`
+#LOCAL_NAME=`cat ${SELF_ROOT}/configure | sed -n '2p'`
+LOCAL_NAME=`gdrive sync list | grep $REMOTE_IDS | awk '{print $2}'`
+TEMP_ROOT=`cat ${SELF_ROOT}/configure | sed -n '2p'`
+TEMP_LOCAL=$TEMP_ROOT/${LOCAL_NAME}
+
+LOCAL_NAME=.
+echo $REMOTE_IDS
+echo $LOCAL_NAME
+echo $TEMP_LOCAL
+
+
+echo '###########################################################'
+echo '# 'uploading to remote server
+gdrive sync upload --keep-local $LOCAL_NAME $REMOTE_IDS
+
+# begin to clean the remote repository
+echo '###########################################################'
+echo '# 'downloading to cache directory
+if [ ! -d "${TEMP_LOCAL}" ] ; then
+  echo "createing temporory directory"
+  mkdir -p  "${TEMP_LOCAL}"
+	cp -r $LOCAL_NAME/* $TEMP_LOCAL/
+fi
+gdrive sync download --keep-remote $REMOTE_IDS $TEMP_LOCAL
+
+TEMP_FID=${TEMP_ROOT}/.tempfid
+
+gdrive sync content --path-width 0 $REMOTE_IDS > $TEMP_FID
+
+TEMP_DIF=${TEMP_ROOT}/.tempdiff
+diff -r $LOCAL_NAME $TEMP_LOCAL | grep "Only in ${TEMP_LOCAL}" > $TEMP_DIF
+
+
+sed -i "s|Only in ${TEMP_LOCAL}[\/:] *||" $TEMP_DIF 
+sed -i "s|:[\t ]*|/|" $TEMP_DIF 
+
+#cat $TEMP_DIF
+#cat $TEMP_FID
+
+NDIFFS=`cat $TEMP_DIF | wc -l`
+
+
+echo '###########################################################'
+echo '# ' begin to cleaning remote repository
+for i in `seq 1 1 $NDIFFS` ;
+do
+  FNAME=`head -n $i $TEMP_DIF | tail -n 1`
+	GFNAME=`echo $FNAME | sed 's/^\./\\\./'`
+	FID=`grep "$GFNAME" $TEMP_FID | awk '{print $1}'`
+	echo 
+  if [ -n "$FID" ] ; then 
+	  gdrive delete -r $FID
+    rm -rf "$TEMP_LOCAL/$FNAME"
+	fi
+done
+
+rm -f $TEMP_DIF $TEMP_FID 
+
+echo '# ' end to cleaning remote repository
+echo '###########################################################'
+
+
+echo '###########################################################'
+echo '# ' begin to log ...
+echo evening $(date +"%Y/%m/%d-%H:%M") >> ${SELF_ROOT}/log.txt
+gdrive sync upload --keep-local $LOCAL_NAME $REMOTE_IDS
+echo '# ' end to log ...
+echo '###########################################################'
+#
+#
+#
+#
