@@ -23,13 +23,13 @@ echo '# 'downloading to cache directory
 if [ ! -d "${TEMP_LOCAL}" ] ; then
   echo "createing temporory directory"
   mkdir -p  "${TEMP_LOCAL}"
-	cp -r $LOCAL_NAME/* $TEMP_LOCAL/
+  cp -r $LOCAL_NAME/* $TEMP_LOCAL/
 fi
 gdrive sync download --keep-remote $REMOTE_IDS $TEMP_LOCAL
 
 TEMP_FID=${TEMP_ROOT}/.tempfid
 
-gdrive sync content --path-width 0 $REMOTE_IDS > $TEMP_FID
+gdrive sync content --path-width 0 $REMOTE_IDS | tr '\\' '/' > $TEMP_FID
 
 TEMP_DIF=${TEMP_ROOT}/.tempdiff
 diff -r $LOCAL_NAME $TEMP_LOCAL | grep "Only in ${TEMP_LOCAL}" > $TEMP_DIF
@@ -49,13 +49,12 @@ echo '# ' begin to cleaning remote repository
 for i in `seq 1 1 $NDIFFS` ;
 do
   FNAME=`head -n $i $TEMP_DIF | tail -n 1`
-	GFNAME=`echo $FNAME | sed 's/^\./\\\./'`
-	FID=`grep "$GFNAME" $TEMP_FID | awk '{print $1}'`
-	echo 
+  GFNAME=`echo $FNAME | sed 's/^\./\\\./'`
+  FID=`grep "$GFNAME" $TEMP_FID | awk '{print $1}'`
   if [ -n "$FID" ] ; then 
-	  gdrive delete -r $FID
+    gdrive delete -r $FID
     rm -rf "$TEMP_LOCAL/$FNAME"
-	fi
+  fi
 done
 
 rm -f $TEMP_DIF $TEMP_FID 
